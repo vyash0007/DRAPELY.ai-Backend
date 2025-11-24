@@ -47,6 +47,11 @@ async function fetchWithAuth(endpoint: string, options: RequestInit = {}) {
     return null;
   }
   
+  // Handle 404 Not Found gracefully - return null instead of throwing
+  if (response && response.status === 404) {
+    return null;
+  }
+
   if (!response || !response.ok) {
     throw new Error(`API error: ${response ? response.statusText : 'No response'}`);
   }
@@ -282,6 +287,10 @@ export async function getAdminProducts(params?: any) {
 export async function getAdminProductById(id: string) {
   try {
     const data = await fetchWithAuth(`/admin/products/${id}`);
+    // fetchWithAuth returns null for 401/404/429, so handle that case
+    if (!data) {
+      return null;
+    }
     return data.product;
   } catch (error) {
     console.error('Error fetching admin product:', error);

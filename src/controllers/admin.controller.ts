@@ -212,6 +212,48 @@ export class AdminController {
     try {
       const { id } = req.params;
 
+      // Check if product exists in any orders
+      const orderItemsCount = await prisma.orderItem.count({
+        where: { productId: id },
+      });
+
+      if (orderItemsCount > 0) {
+        throw new AppError(
+          400,
+          `Cannot delete product. It is referenced in ${orderItemsCount} order(s). Please archive the product instead.`
+        );
+      }
+
+      // Check if product exists in any carts
+      const cartItemsCount = await prisma.cartItem.count({
+        where: { productId: id },
+      });
+
+      if (cartItemsCount > 0) {
+        // Remove from all carts first
+        await prisma.cartItem.deleteMany({
+          where: { productId: id },
+        });
+      }
+
+      // Check if product exists in any wishlists
+      const wishlistItemsCount = await prisma.wishlistItem.count({
+        where: { productId: id },
+      });
+
+      if (wishlistItemsCount > 0) {
+        // Remove from all wishlists first
+        await prisma.wishlistItem.deleteMany({
+          where: { productId: id },
+        });
+      }
+
+      // Delete size stocks (should cascade, but doing it explicitly for clarity)
+      await prisma.sizeStock.deleteMany({
+        where: { productId: id },
+      });
+
+      // Now delete the product
       await prisma.product.delete({
         where: { id },
       });

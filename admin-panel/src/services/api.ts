@@ -303,8 +303,15 @@ class ApiClient {
   }
 
   async deleteAdminProduct(id: string) {
-    const response = await this.client.delete(`/admin/products/${id}`);
-    return response.data;
+    try {
+      const response = await this.client.delete(`/admin/products/${id}`);
+      return { success: true, data: response.data };
+    } catch (error: any) {
+      return {
+        success: false,
+        error: error.response?.data?.message || error.message || 'Failed to delete product'
+      };
+    }
   }
 
   async getAdminCategories() {
