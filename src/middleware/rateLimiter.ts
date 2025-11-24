@@ -10,7 +10,7 @@ export const limiter = rateLimit({
   skip: (req) => {
     if (process.env.NODE_ENV !== 'production') {
       const ip = req.ip || req.socket.remoteAddress;
-      return ip === '127.0.0.1' || ip === '::1' || ip?.includes('localhost');
+      return ip === '127.0.0.1' || ip === '::1' || ip?.includes('localhost') || false;
     }
     return false;
   },
