@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - DRAPELY.ai Admin</title>
+    <link rel="stylesheet" href="/admin/css/style.css">
+</head>
+<body>
+    <div class="admin-layout">
+        <aside class="sidebar">
+            <div class="logo">
+                <h2>DRAPELY.ai</h2>
+                <p>Admin Panel</p>
+            </div>
+
+            <nav class="nav-menu">
+                <a href="/admin" class="nav-item active" data-page="dashboard">
+                    <span>📊</span> Dashboard
+                </a>
+                <a href="/admin" class="nav-item" data-page="products">
+                    <span>👕</span> Products
+                </a>
+                <a href="/admin" class="nav-item" data-page="categories">
+                    <span>📁</span> Categories
+                </a>
+                <a href="/admin" class="nav-item" data-page="orders">
+                    <span>📦</span> Orders
+                </a>
+                <a href="/admin" class="nav-item" data-page="customers">
+                    <span>👥</span> Customers
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <button id="logoutBtn" class="btn-secondary">Logout</button>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <header class="top-bar">
+                <h1 id="pageTitle">Dashboard</h1>
+                <div class="user-info">
+                    <span id="adminEmail"></span>
+                </div>
+            </header>
+
+            <div id="contentArea" class="content-area">
+                <!-- Dynamic content will be loaded here -->
+            </div>
+        </main>
+    </div>
+
+    <script src="/admin/js/app.js"></script>
+</body>
+</html>

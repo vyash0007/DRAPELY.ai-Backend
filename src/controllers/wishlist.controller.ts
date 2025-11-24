@@ -4,11 +4,12 @@ import { AppError } from '../middleware/errorHandler';
 import { AuthenticatedRequest } from '../middleware/auth';
 
 export class WishlistController {
-  async getWishlist(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+  async getWishlist(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
     try {
       // If no userId, return empty wishlist (user not authenticated)
       if (!req.userId) {
-        return res.json({ wishlistItems: [] });
+        res.json({ wishlistItems: [] });
+        return;
       }
 
       const userId = req.userId;
@@ -19,7 +20,8 @@ export class WishlistController {
 
       if (!user) {
         // User not found in database, return empty wishlist
-        return res.json({ wishlistItems: [] });
+        res.json({ wishlistItems: [] });
+        return;
       }
 
       const wishlistItems = await prisma.wishlistItem.findMany({

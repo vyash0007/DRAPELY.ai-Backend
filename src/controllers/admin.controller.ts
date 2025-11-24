@@ -19,6 +19,7 @@ export class AdminController {
         res.json({
           success: true,
           token: 'admin-session-token', // In production, use JWT
+          email: email,
         });
       } else {
         throw new AppError(401, 'Invalid credentials');
@@ -45,29 +46,24 @@ export class AdminController {
         where.categoryId = category;
       }
 
-      const [products, total] = await Promise.all([
-        prisma.product.findMany({
-          where,
-          include: {
-            category: true,
-            sizeStocks: true,
-          },
-          skip,
-          take: Number(limit),
-          orderBy: { createdAt: 'desc' },
-        }),
-        prisma.product.count({ where }),
-      ]);
-
-      res.json({
-        products,
-        pagination: {
-          page: Number(page),
-          limit: Number(limit),
-          total,
-          totalPages: Math.ceil(total / Number(limit)),
+      const products = await prisma.product.findMany({
+        where,
+        include: {
+          category: true,
+          sizeStocks: true,
         },
+        skip,
+        take: Number(limit),
+        orderBy: { createdAt: 'desc' },
       });
+
+      // Map products to match frontend expected structure
+      const mappedProducts = products.map(p => ({
+        ...p,
+        name: p.title, // Map title to name for frontend compatibility
+      }));
+
+      res.json(mappedProducts);
     } catch (error) {
       next(error);
     }
@@ -138,8 +134,14 @@ export class AdminController {
       });
 
       res.json({ product });
-    } catch (error) {
-      next(error);
+    } catch (error: any) {
+      // Handle Prisma unique constraint errors
+      if (error.code === 'P2002') {
+        const field = error.meta?.target?.[0] || 'field';
+        next(new AppError(400, `A product with this ${field} already exists`));
+      } else {
+        next(error);
+      }
     }
   }
 
@@ -221,7 +223,7 @@ export class AdminController {
   }
 
   // Categories
-  async getCategories(_req: Request, res: Response, next: NextFunction) {  
+  async getCategories(_req: Request, res: Response, next: NextFunction) {
     try {
       const categories = await prisma.category.findMany({
         include: {
@@ -232,7 +234,7 @@ export class AdminController {
         orderBy: { name: 'asc' },
       });
 
-      res.json({ categories });
+      res.json(categories);
     } catch (error) {
       next(error);
     }
@@ -320,7 +322,7 @@ export class AdminController {
       const skip = (Number(page) - 1) * Number(limit);
 
       const where: any = {};
-      if (status) {
+      if (status && status !== 'undefined') {
         where.status = status;
       }
 
@@ -342,12 +344,18 @@ export class AdminController {
         prisma.order.count({ where }),
       ]);
 
+      // Map orders to match frontend expected structure
+      const mappedOrders = orders.map(o => ({
+        ...o,
+        totalAmount: o.total, // Map total to totalAmount
+      }));
+
       res.json({
-        orders,
+        orders: mappedOrders,
         pagination: {
+          total,
           page: Number(page),
           limit: Number(limit),
-          total,
           totalPages: Math.ceil(total / Number(limit)),
         },
       });
@@ -432,6 +440,13 @@ export class AdminController {
             _count: {
               select: { orders: true },
             },
+            orders: {
+              select: {
+                total: true,
+                createdAt: true,
+              },
+              orderBy: { createdAt: 'desc' },
+            },
           },
           skip,
           take: Number(limit),
@@ -440,12 +455,26 @@ export class AdminController {
         prisma.user.count({ where }),
       ]);
 
+      // Map customers to match frontend expected structure
+      const mappedCustomers = customers.map(c => {
+        const totalSpent = c.orders.reduce((sum, order) => sum + Number(order.total), 0);
+        const lastOrder = c.orders[0];
+
+        return {
+          ...c,
+          isPremium: c.hasPremium, // Map hasPremium to isPremium
+          ordersCount: c._count.orders,
+          totalSpent,
+          lastOrderDate: lastOrder ? lastOrder.createdAt : null,
+        };
+      });
+
       res.json({
-        customers,
+        customers: mappedCustomers,
         pagination: {
+          total,
           page: Number(page),
           limit: Number(limit),
-          total,
           totalPages: Math.ceil(total / Number(limit)),
         },
       });
@@ -481,7 +510,16 @@ export class AdminController {
         throw new AppError(404, 'Customer not found');
       }
 
-      res.json({ customer });
+      // Calculate total spent
+      const totalSpent = customer.orders.reduce((sum, order) => sum + Number(order.total), 0);
+
+      res.json({
+        customer: {
+          ...customer,
+          totalSpent,
+          totalOrders: customer._count.orders,
+        }
+      });
     } catch (error) {
       next(error);
     }
@@ -497,7 +535,7 @@ export class AdminController {
         data: { hasPremium },
       });
 
-      res.json({ customer });
+      res.json({ success: true, customer });
     } catch (error) {
       next(error);
     }
@@ -513,7 +551,7 @@ export class AdminController {
         data: { aiEnabled },
       });
 
-      res.json({ customer });
+      res.json({ success: true, customer });
     } catch (error) {
       next(error);
     }
@@ -527,7 +565,9 @@ export class AdminController {
         totalOrders,
         totalCustomers,
         totalRevenue,
-        recentOrders,
+        pendingOrders,
+        processingOrders,
+        deliveredOrders,
       ] = await Promise.all([
         prisma.product.count(),
         prisma.order.count(),
@@ -536,28 +576,19 @@ export class AdminController {
           _sum: { total: true },
           where: { status: { not: 'CANCELLED' } },
         }),
-        prisma.order.findMany({
-          take: 5,
-          orderBy: { createdAt: 'desc' },
-          include: {
-            user: true,
-            items: {
-              include: {
-                product: true,
-              },
-            },
-          },
-        }),
+        prisma.order.count({ where: { status: 'PENDING' } }),
+        prisma.order.count({ where: { status: 'PROCESSING' } }),
+        prisma.order.count({ where: { status: 'DELIVERED' } }),
       ]);
 
       res.json({
-        stats: {
-          totalProducts,
-          totalOrders,
-          totalCustomers,
-          totalRevenue: totalRevenue._sum.total || 0,
-        },
-        recentOrders,
+        totalProducts,
+        totalOrders,
+        totalCustomers,
+        totalRevenue: totalRevenue._sum.total || 0,
+        pendingOrders,
+        processingOrders,
+        deliveredOrders,
       });
     } catch (error) {
       next(error);

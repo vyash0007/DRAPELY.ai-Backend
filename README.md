@@ -162,10 +162,46 @@ npm run db:push
 npm run db:seed
 ```
 
+## Admin Panel
+
+The admin panel is a **standalone Next.js application** located in `backend/admin-panel/`. It runs independently on port **5001** and connects to the backend API.
+
+### Starting the Admin Panel
+
+```bash
+# Option 1: Use the startup script
+# Windows:
+start-admin.bat
+
+# macOS/Linux:
+./start-admin.sh
+
+# Option 2: Manual start
+cd admin-panel
+npm install  # First time only
+npm run dev
+```
+
+Access the admin panel at: **http://localhost:5001**
+
+**Default Login:**
+- Email: `admin@example.com`
+- Password: `StrongPass123` (change in `.env`)
+
+See [admin-panel/README.md](admin-panel/README.md) for detailed documentation.
+
 ## Project Structure
 
 ```
 backend/
+├── admin-panel/         # Standalone Next.js admin app (port 5001)
+│   ├── src/
+│   │   ├── app/        # Next.js pages
+│   │   ├── components/ # React components
+│   │   ├── lib/        # Utilities
+│   │   └── services/   # API client
+│   ├── package.json
+│   └── README.md
 ├── src/
 │   ├── config/          # Configuration files
 │   ├── controllers/     # Route controllers

@@ -5,6 +5,39 @@ import { AuthenticatedRequest } from '../middleware/auth';
 import { Readable } from 'stream';
 
 export class UploadController {
+  async uploadAdminImage(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+    try {
+      if (!req.file) {
+        throw new AppError(400, 'No image file provided');
+      }
+
+      // Convert buffer to stream
+      const stream = Readable.from(req.file.buffer);
+
+      // Upload to Cloudinary
+      const result = await new Promise((resolve, reject) => {
+        const uploadStream = cloudinary.uploader.upload_stream(
+          {
+            folder: 'drapely/admin',
+            resource_type: 'image',
+          },
+          (error, result) => {
+            if (error) reject(error);
+            else resolve(result);
+          }
+        );
+        stream.pipe(uploadStream);
+      });
+
+      res.json({
+        url: (result as any).secure_url,
+        publicId: (result as any).public_id,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
   async uploadImage(req: AuthenticatedRequest, res: Response, next: NextFunction) {
     try {
       if (!req.file) {
