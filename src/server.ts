@@ -29,13 +29,15 @@ app.use(helmet());
 app.use(cors({
   origin: process.env.NODE_ENV === 'production'
     ? [
-        process.env.FRONTEND_URL || '',
-        process.env.ADMIN_PANEL_URL || '',
-      ].filter(Boolean)
+      process.env.FRONTEND_URL || '',
+      process.env.ADMIN_PANEL_URL || '',
+      'https://drapely-ai-storefront.vercel.app',
+      'https://drapely-ai-admin.vercel.app',
+    ].filter(Boolean)
     : [
-        'http://localhost:3000',
-        'http://localhost:5001',
-      ],
+      'http://localhost:3000',
+      'http://localhost:5001',
+    ],
   credentials: true,
 }));
 
@@ -51,7 +53,7 @@ app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
 app.use('/api', limiter);
 
 // Health check
- app.get('/health', (_req: Request, res: Response) => {
+app.get('/health', (_req: Request, res: Response) => {
   res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
@@ -69,7 +71,7 @@ app.use('/api/webhooks', webhookRoutes);
 app.use('/api/admin', adminRoutes);
 
 // 404 handler
- app.use((_req: Request, res: Response) => {
+app.use((_req: Request, res: Response) => {
   res.status(404).json({ error: 'Route not found' });
 });
 
