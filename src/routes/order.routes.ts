@@ -9,6 +9,7 @@ const orderController = new OrderController();
 router.use(authenticate);
 
 router.get('/', orderController.getUserOrders);
+router.get('/session/:sessionId', orderController.getOrderBySessionId);
 router.get('/:orderId', orderController.getOrderById);
 router.post('/:orderId/cancel', orderController.cancelOrder);
 

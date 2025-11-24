@@ -79,6 +79,47 @@ export class OrderController {
     }
   }
 
+  async getOrderBySessionId(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+    try {
+      const userId = req.userId!;
+      const { sessionId } = req.params;
+
+      const user = await prisma.user.findUnique({
+        where: { clerkId: userId },
+      });
+
+      if (!user) {
+        throw new AppError(404, 'User not found');
+      }
+
+      const order = await prisma.order.findFirst({
+        where: {
+          stripeSessionId: sessionId,
+          userId: user.id,
+        },
+        include: {
+          items: {
+            include: {
+              product: {
+                include: {
+                  category: true,
+                },
+              },
+            },
+          },
+        },
+      });
+
+      if (!order) {
+        throw new AppError(404, 'Order not found');
+      }
+
+      res.json({ order });
+    } catch (error) {
+      next(error);
+    }
+  }
+
   async cancelOrder(req: AuthenticatedRequest, res: Response, next: NextFunction) {
     try {
       const userId = req.userId!;
