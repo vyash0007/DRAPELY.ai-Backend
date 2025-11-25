@@ -485,6 +485,7 @@ export class AdminController {
             orders: {
               select: {
                 total: true,
+                status: true,
                 createdAt: true,
               },
               orderBy: { createdAt: 'desc' },
@@ -499,7 +500,10 @@ export class AdminController {
 
       // Map customers to match frontend expected structure
       const mappedCustomers = customers.map(c => {
-        const totalSpent = c.orders.reduce((sum, order) => sum + Number(order.total), 0);
+        const totalSpent = c.orders.reduce((sum, order) => {
+          if (order.status === 'CANCELLED') return sum;
+          return sum + Number(order.total);
+        }, 0);
         const lastOrder = c.orders[0];
 
         return {
@@ -553,7 +557,10 @@ export class AdminController {
       }
 
       // Calculate total spent
-      const totalSpent = customer.orders.reduce((sum, order) => sum + Number(order.total), 0);
+      const totalSpent = customer.orders.reduce((sum, order) => {
+        if (order.status === 'CANCELLED') return sum;
+        return sum + Number(order.total);
+      }, 0);
 
       res.json({
         customer: {

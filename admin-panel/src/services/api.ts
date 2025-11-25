@@ -345,10 +345,17 @@ class ApiClient {
   }
 
   async updateAdminOrderStatus(id: string, status: string) {
-    const response = await this.client.put(`/admin/orders/${id}/status`, {
-      status,
-    });
-    return response.data;
+    try {
+      const response = await this.client.put(`/admin/orders/${id}/status`, {
+        status,
+      });
+      return { success: true, message: 'Order status updated successfully', data: response.data };
+    } catch (error: any) {
+      return {
+        success: false,
+        message: error.response?.data?.message || error.message || 'Failed to update order status',
+      };
+    }
   }
 
   async getAdminCustomers(params?: any) {

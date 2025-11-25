@@ -69,6 +69,38 @@ export class WebhookController {
 
               console.log(`[Webhook] Order updated to PROCESSING: ${session.metadata.orderId}`);
 
+              // Update stock
+              const orderItems = await prisma.orderItem.findMany({
+                where: { orderId: session.metadata.orderId },
+              });
+
+              for (const item of orderItems) {
+                // Update product total stock
+                await prisma.product.update({
+                  where: { id: item.productId },
+                  data: {
+                    stock: {
+                      decrement: item.quantity,
+                    },
+                  },
+                });
+
+                // Update size stock if applicable
+                if (item.size) {
+                  await prisma.sizeStock.updateMany({
+                    where: {
+                      productId: item.productId,
+                      size: item.size,
+                    },
+                    data: {
+                      quantity: {
+                        decrement: item.quantity,
+                      },
+                    },
+                  });
+                }
+              }
+
               // Clear user's cart
               const order = await prisma.order.findUnique({
                 where: { id: session.metadata.orderId },
