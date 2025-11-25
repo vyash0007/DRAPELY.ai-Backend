@@ -32,7 +32,7 @@ export function OrderFilters() {
       params.delete('search');
     }
     params.delete('page');
-    router.push(`/admin/orders?${params.toString()}`);
+    router.push(`/orders?${params.toString()}`);
   };
 
   const handleStatusChange = (status: string) => {
@@ -43,7 +43,7 @@ export function OrderFilters() {
       params.delete('status');
     }
     params.delete('page');
-    router.push(`/admin/orders?${params.toString()}`);
+    router.push(`/orders?${params.toString()}`);
   };
 
   return (

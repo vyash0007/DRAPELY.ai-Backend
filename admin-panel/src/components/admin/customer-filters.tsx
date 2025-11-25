@@ -16,7 +16,7 @@ export function CustomerFilters() {
       params.delete('search');
     }
     params.delete('page');
-    router.push(`/admin/customers?${params.toString()}`);
+    router.push(`/customers?${params.toString()}`);
   };
 
   return (

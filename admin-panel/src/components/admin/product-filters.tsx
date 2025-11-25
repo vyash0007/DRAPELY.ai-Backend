@@ -36,7 +36,7 @@ export function ProductFilters({ categories }: ProductFiltersProps) {
       params.delete('search');
     }
     params.delete('page');
-    router.push(`/admin/products?${params.toString()}`);
+    router.push(`/products?${params.toString()}`);
   };
 
   const handleCategoryChange = (categoryId: string) => {
@@ -47,7 +47,7 @@ export function ProductFilters({ categories }: ProductFiltersProps) {
       params.delete('categoryId');
     }
     params.delete('page');
-    router.push(`/admin/products?${params.toString()}`);
+    router.push(`/products?${params.toString()}`);
   };
 
   return (
